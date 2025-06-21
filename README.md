@@ -1,4 +1,4 @@
-# PoseTrapezoidalInterpolator
+# Trapezoidal Pose-Interpolator
 
 This repository provides a unified **pose interpolation** library using **trapezoidal motion profiles** for both translation and rotation. The core idea is to interpolate over a **scalar path** combining position and orientation distance into a single trajectory, guaranteeing **synchronized acceleration, cruise, and deceleration** for both motion components.
 
@@ -78,6 +78,79 @@ Run this script to generate a full trajectory visualization and export an animat
 ```bash
 python examples/pose_trapezoidal_test.py
 ```
+
+## 📐 Mathematical Foundation
+
+This library interpolates between 6-DOF poses using a unified scalar trajectory governed by trapezoidal motion profiles.
+
+### 1D Motion Profile
+
+The scalar motion profile is defined with a maximum velocity $v_{\text{max}}$ and acceleration $a_{\text{max}}$, resulting in either:
+
+- **Trapezoidal profile** if distance $S$ is long enough to cruise.
+- **Triangular profile** if distance is too short to reach $v_{\text{max}}$.
+
+The trajectory satisfies:
+
+$$
+\begin{aligned}
+v(t) &=
+\begin{cases}
+a_{\text{max}} t & 0 \leq t < t_1 \\\\
+v_{\text{max}} & t_1 \leq t < t_2 \\\\
+a_{\text{max}} (T - t) & t_2 \leq t \leq T
+\end{cases} \\\\
+x(t) &= \int_0^t v(\tau)\, d\tau
+\end{aligned}
+$$
+
+---
+
+### 3D Translation
+
+Each segment is interpolated by reducing vector displacement to a scalar path of length $S = \| \mathbf{p}_1 - \mathbf{p}_0 \|$, applying the 1D profile along the unit direction.
+
+---
+
+### Rotation as Axis + Angle
+
+Quaternion interpolation is performed using the exponential map of the relative rotation:
+
+$$
+\mathbf{q}_{\text{rel}} = \mathbf{q}_1 \cdot \mathbf{q}_0^{-1}
+$$
+
+Convert to axis-angle:
+
+$$
+\theta = \| \mathbf{r} \|, \quad \mathbf{u} = \frac{\mathbf{r}}{\theta}, \quad \text{where } \mathbf{r} = \log(\mathbf{q}_{\text{rel}})
+$$
+
+Then use the **same scalar profile** for $\theta(t)$ to compute rotation:
+
+$$
+\mathbf{R}(t) = \exp\left( \theta(t)\, \hat{\mathbf{u}} \right) \cdot \mathbf{R}_0
+$$
+
+---
+
+### Unified Pose Trajectory
+
+Each pose segment is parameterized by:
+
+$$
+S_i = \sqrt{ \| \Delta \mathbf{p}_i \|^2 + \theta_i^2 }
+$$
+
+And a **shared scalar trajectory** $s(t) \in [0, S_i]$ is used to synchronize translation and rotation.
+
+```python
+p(t) = (1 - a(t)) * p0 + a(t) * p1
+q(t) = slerp(q0, q1, a(t))
+```
+
+where $a(t) = \frac{s(t)}{S_i}$ is the scalar fraction from trapezoidal profile.
+
 
 ## 📜 License
 
