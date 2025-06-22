@@ -90,6 +90,69 @@ The scalar motion profile is defined with a maximum velocity $v_{\text{max}}$ an
 - **Trapezoidal profile** if distance $S$ is long enough to cruise.
 - **Triangular profile** if distance is too short to reach $v_{\text{max}}$.
 
+The **minimum distance required** to reach the maximum velocity is derived by computing the distance needed to accelerate from zero to $v_{\text{max}}$ and then decelerate back to zero without a cruise phase. This forms a triangular velocity profile.
+
+The time to accelerate to $v_{\text{max}}$ is:
+
+$$
+t_a = \frac{v_{\text{max}}}{a_{\text{max}}}
+$$
+
+The distance covered during acceleration is:
+
+$$
+S_a = \frac{1}{2} a_{\text{max}} t_a^2 = \frac{1}{2} a_{\text{max}} \left( \frac{v_{\text{max}}}{a_{\text{max}}} \right)^2 = \frac{v_{\text{max}}^2}{2a_{\text{max}}}
+$$
+
+Since the deceleration phase mirrors the acceleration phase, the **minimum total distance** required to form a trapezoidal profile is:
+
+$$
+S_{\text{min}} = 2S_a = \frac{v_{\text{max}}^2}{a_{\text{max}}}
+$$
+
+If the desired travel distance $S < S_{\text{min}}$, the profile must be **triangular**, reaching a peak velocity lower than $v_{\text{max}}$.
+
+#### Triangular Profile (When $S < S_{\text{min}}$)
+
+When the total distance $S$ is less than $S_{\text{min}}$, the motion cannot reach $v_{\text{max}}$. Instead, it follows a **triangular profile** with a lower peak velocity $v_{\text{peak}}$.
+
+We assume symmetric acceleration and deceleration, and solve for $v_{\text{peak}}$ such that:
+
+$$
+S = 2 \cdot \frac{1}{2} \cdot \frac{v_{\text{peak}}^2}{a_{\text{max}}} = \frac{v_{\text{peak}}^2}{a_{\text{max}}}
+$$
+
+Solving for $v_{\text{peak}}$ gives:
+
+$$
+v_{\text{peak}} = \sqrt{a_{\text{max}} \cdot S}
+$$
+
+This ensures the profile accelerates to $v_{\text{peak}}$ and then decelerates back to zero over the total distance $S$.
+
+
+$$
+t_a = \frac{v_{\text{peak}}}{a_{\text{max}}} = \frac{\sqrt{a_{\text{max}} \cdot S}}{a_{\text{max}}} = \sqrt{\frac{S}{a_{\text{max}}}}
+$$
+
+- Deceleration time is the same due to symmetry:
+
+$$
+t_d = t_a = \sqrt{\frac{S}{a_{\text{max}}}}
+$$
+
+- Total motion duration:
+
+$$
+T = t_a + t_d = 2 \sqrt{\frac{S}{a_{\text{max}}}}
+$$
+
+If trapeziod case, it include crusing phase with $v(t) = v_max$
+
+$$
+T_C = (S-S_{min})/v_max
+$$
+
 The trajectory satisfies:
 
 $$
@@ -108,7 +171,47 @@ $$
 
 ### 3D Translation
 
-Each segment is interpolated by reducing vector displacement to a scalar path of length $S = \| \mathbf{p}_1 - \mathbf{p}_0 \|$, applying the 1D profile along the unit direction.
+Each segment is interpolated by reducing the vector displacement to a scalar path of length
+
+$$
+S = \| \mathbf{p}_1 - \mathbf{p}_0 \|,
+$$
+
+and applying the 1D trapezoidal/triangular motion profile along this scalar path.
+
+As we interpolate $s(t)$ along the path $S$, the vector position can be computed as:
+
+$$
+\mathbf{y}(t) = (1 - a(t)) \mathbf{p}_0 + a(t) \mathbf{p}_1,
+$$
+
+where the normalized scalar progress is defined as:
+
+$$
+a(t) = \frac{s(t)}{S}.
+$$
+
+To ensure the per-axis velocity and acceleration limits ($v_{\text{max}}$, $a_{\text{max}}$) are respected across all vector elements, we define the **unit direction vector**:
+
+$$
+\hat{\mathbf{d}} = \frac{\mathbf{p}_1 - \mathbf{p}_0}{\|\mathbf{p}_1 - \mathbf{p}_0\|}.
+$$
+
+Then, the scalar velocity and acceleration limits used in the 1D profile are computed by scaling down component-wise:
+
+
+$$
+v_{\text{scalar}} = \min_i \left( \frac{v_{\text{max},i}}{|\hat{d}_i|} \right)
+$$
+
+$$
+a_{\text{scalar}} = \min_i \left( \frac{a_{\text{max},i}}{|\hat{d}_i|} \right),
+$$
+
+for all $i$ where $\hat{d}_i \neq 0$, and treating divisions by zero as $\infty$.
+
+This guarantees that the interpolated vector respects all per-axis constraints during the motion.
+
 
 ---
 
@@ -126,7 +229,7 @@ $$
 \theta = \| \mathbf{r} \|, \quad \mathbf{u} = \frac{\mathbf{r}}{\theta}, \quad \text{where } \mathbf{r} = \log(\mathbf{q}_{\text{rel}})
 $$
 
-Then use the **same scalar profile** for $\theta(t)$ to compute rotation:
+Then use the **trapezoidal scalar profile** for $\theta(t)$ to compute rotation:
 
 $$
 \mathbf{R}(t) = \exp\left( \theta(t)\, \hat{\mathbf{u}} \right) \cdot \mathbf{R}_0
