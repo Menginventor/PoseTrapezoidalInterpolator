@@ -1,4 +1,4 @@
-# Trapezoidal Pose-Interpolator
+# Trapezoidal-Profile Pose-Interpolator
 
 This repository provides a unified **pose interpolation** library using **trapezoidal motion profiles** for both translation and rotation. The core idea is to interpolate over a **scalar path** combining position and orientation distance into a single trajectory, guaranteeing **synchronized acceleration, cruise, and deceleration** for both motion components.
 
